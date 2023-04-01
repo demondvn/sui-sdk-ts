@@ -4,7 +4,7 @@
 import { FaucetResponse, SuiAddress } from '../types';
 import { FaucetRateLimitError } from '../utils/errors';
 import { HttpHeaders } from './client';
-
+import fetch from "node-fetch";
 export async function requestSuiFromFaucet(
   endpoint: string,
   recipient: SuiAddress,
@@ -28,7 +28,7 @@ export async function requestSuiFromFaucet(
       `Too many requests from this client have been sent to the faucet. Please retry later`,
     );
   }
-  let parsed;
+  let parsed:any; 
   try {
     parsed = await res.json();
   } catch (e) {

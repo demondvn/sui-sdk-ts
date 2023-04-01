@@ -16,6 +16,7 @@ import { pkgVersion } from '../pkg-version';
 import { TARGETED_RPC_VERSION } from '../providers/json-rpc-provider';
 import { RequestParamsLike } from 'jayson';
 import { RPCError, RPCValidationError } from '../utils/errors';
+import fetch from "node-fetch";
 
 /**
  * An object defining headers to be passed to the RPC server
@@ -68,7 +69,7 @@ export class JsonRpcClient {
         };
 
         try {
-          let res: Response = await fetch(url, options);
+          let res = await fetch(url, options);
           const result = await res.text();
           if (res.ok) {
             callback(null, result);

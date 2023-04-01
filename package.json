@@ -1,5 +1,5 @@
 {
-  "name": "@mysten/sui.js",
+  "name": "sui-ts",
   "author": "Mysten Labs <build@mystenlabs.com>",
   "description": "Sui TypeScript API(Work in Progress)",
   "version": "0.30.0",
@@ -87,16 +87,21 @@
     "wait-on": "^7.0.1"
   },
   "dependencies": {
-    "@mysten/bcs": "workspace:*",
+    "@mysten/bcs": "^0.7.0",
     "@noble/curves": "^0.9.0",
     "@noble/hashes": "^1.3.0",
     "@scure/bip32": "^1.2.0",
     "@scure/bip39": "^1.2.0",
     "@suchipi/femver": "^1.0.0",
+    "bs58": "^5.0.0",
     "jayson": "^4.0.0",
     "msw": "^1.2.1",
+    "node-fetch": "^3.3.1",
     "rpc-websockets": "^7.5.1",
     "superstruct": "^1.0.3",
     "tweetnacl": "^1.0.3"
+  },
+  "directories": {
+    "test": "test"
   }
 }
