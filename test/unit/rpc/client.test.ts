@@ -1,0 +1,102 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  vi,
+  afterEach,
+} from 'vitest';
+import { JsonRpcClient } from '../../../src/rpc/client';
+import { GetOwnedObjectsResponse, SuiObjectInfo } from '../../../src';
+import { setupServer } from 'msw/node';
+import { rest } from 'msw';
+
+const EXAMPLE_OBJECT: SuiObjectInfo = {
+  objectId: '8dc6a6f70564e29a01c7293a9c03818fda2d049f',
+  version: 0,
+  digest: 'CI8Sf+t3Xrt5h9ENlmyR8bbMVfg6df3vSDc08Gbk9/g=',
+  owner: {
+    AddressOwner: '0x215592226abfec8d03fbbeb8b30eb0d2129c94b0',
+  },
+  type: 'moveObject',
+  previousTransaction: '4RJfkN9SgLYdb0LqxBHh6lfRPicQ8FLJgzi9w2COcTo=',
+};
+
+const OBJECT_WITH_WRONG_SCHEMA = {
+  objectId: '8dc6a6f70564e29a01c7293a9c03818fda2d049f',
+  version: 0,
+  digest: 'CI8Sf+t3Xrt5h9ENlmyR8bbMVfg6df3vSDc08Gbk9/g=',
+  owner: {
+    AddressOwner1: '0x215592226abfec8d03fbbeb8b30eb0d2129c94b0',
+  },
+  type: 'moveObject',
+  previousTransaction: '4RJfkN9SgLYdb0LqxBHh6lfRPicQ8FLJgzi9w2COcTo=',
+};
+
+const MOCK_ENDPOINT = 'http://127.0.0.1:9000/';
+
+const server = setupServer(
+  rest.post('http://127.0.0.1:9000/', async (req, res, ctx) => {
+    const body = await req.json();
+    return res(
+      ctx.status(200),
+      ctx.json({
+        jsonrpc: '2.0',
+        id: '',
+        result:
+          body.params[0] === '0xfail'
+            ? [OBJECT_WITH_WRONG_SCHEMA]
+            : [EXAMPLE_OBJECT],
+      }),
+    );
+  }),
+);
+
+describe('JSON-RPC Client', () => {
+  beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+  afterAll(() => server.close());
+  afterEach(() => {
+    server.resetHandlers();
+    vi.restoreAllMocks();
+  });
+
+  it('requestWithType', async () => {
+    const client = new JsonRpcClient(MOCK_ENDPOINT);
+    const resp = await client.requestWithType(
+      'sui_getOwnedObjectsByAddress',
+      ['0xsuccess'],
+      GetOwnedObjectsResponse,
+      false,
+    );
+    expect(resp).toHaveLength(1);
+    expect(resp[0]).toEqual(EXAMPLE_OBJECT);
+  });
+
+  it('requestWithType should throw on type mismatch', async () => {
+    const client = new JsonRpcClient(MOCK_ENDPOINT);
+    await expect(
+      client.requestWithType(
+        'sui_getOwnedObjectsByAddress',
+        ['0xfail'],
+        GetOwnedObjectsResponse,
+        false,
+      ),
+    ).rejects.toThrowError();
+  });
+
+  it('requestWithType should succeed if skipDataValidation if true', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const client = new JsonRpcClient(MOCK_ENDPOINT);
+    await client.requestWithType(
+      'sui_getOwnedObjectsByAddress',
+      ['0xfail'],
+      GetOwnedObjectsResponse,
+      true,
+    );
+    expect(warn).toHaveBeenCalled();
+  });
+});
